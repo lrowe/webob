@@ -352,7 +352,7 @@ class BaseRequest(object):
         if self.environ.get('HTTPS', None) in ('on', 'ON') or \
            self.environ.get('SERVER_PORT_SECURE', None) == '1':
             return 'https'
-        return self.environ['wsgi.url_scheme']
+        return self.environ.get('wsgi.url_scheme', 'http')
 
     @property
     def host_port(self):
