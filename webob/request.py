@@ -263,7 +263,6 @@ class BaseRequest(object):
             self.make_body_seekable()
         return self.body_file_raw
 
-    scheme = environ_getter('wsgi.url_scheme')
     method = environ_getter('REQUEST_METHOD', 'GET')
     http_version = environ_getter('SERVER_PROTOCOL')
     content_length = converter(
@@ -349,6 +348,13 @@ class BaseRequest(object):
         return addr
 
     @property
+    def scheme(self):
+        if self.environ.get('HTTPS', None) in ('on', 'ON') or \
+           self.environ.get('SERVER_PORT_SECURE', None) == '1':
+            return 'https'
+        return self.environ['wsgi.url_scheme']
+
+    @property
     def host_port(self):
         """
         The effective server port number as a string.  If the ``HTTP_HOST``
@@ -366,8 +372,7 @@ class BaseRequest(object):
             if ':' in host:
                 host, port = host.split(':', 1)
             else:
-                url_scheme = self.environ['wsgi.url_scheme']
-                if url_scheme == 'https':
+                if self.scheme == 'https':
                     port = '443'
                 else:
                     port = '80'
@@ -381,7 +386,7 @@ class BaseRequest(object):
         The URL through the host (no path)
         """
         e = self.environ
-        url = e['wsgi.url_scheme'] + '://'
+        url = self.scheme + '://'
         if e.get('HTTP_HOST'):
             host = e['HTTP_HOST']
             if ':' in host:
@@ -392,10 +397,10 @@ class BaseRequest(object):
         else:
             host = e['SERVER_NAME']
             port = e['SERVER_PORT']
-        if self.environ['wsgi.url_scheme'] == 'https':
+        if self.scheme == 'https':
             if port == '443':
                 port = None
-        elif self.environ['wsgi.url_scheme'] == 'http':
+        elif self.scheme == 'http':
             if port == '80':
                 port = None
         url += host
